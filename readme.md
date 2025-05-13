@@ -2,7 +2,7 @@
 
 ## Overview
 
-- This repository provides a codebase designed to evaluate real-time collision risks between two traffic participants based on their motion states and dimensions called **MEI**. 
+- This repository provides a codebase designed to evaluate real-time collision risks between two traffic participants based on their motion states and dimensions called **MEI** (Modified-Emergency Index), which is an advanced improvement of the [Emergency Index (EI)](https://github.com/AutoChengh/EmergencyIndex).
 - First, the Separating Axis Theorem (SAT) is used to determine whether a collision has occurred. For pairs of participants that have not collided, the code calculates two key metrics: **ACT** and **MEI**, which quantify the real-time risk of collision.
 
 ## Key Metrics
@@ -28,7 +28,6 @@ This script requires the following Python libraries:
 
 The code processes vehicle motion states using the following variables:
 
-### Variable Descriptions
 
 | **Variable** | **Description** | **Unit** | **Format** |
 |------------|----------|----------|----------|
