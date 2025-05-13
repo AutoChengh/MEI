@@ -2,7 +2,7 @@
 
 ## Overview
 
-This repository provides a codebase designed to evaluate real-time collision risks between two traffic participants based on their motion states and dimensions. The core logic utilizes the Separating Axis Theorem (SAT) to determine whether a collision has already occurred. For pairs of participants that have not collided, the code calculates two key metrics: ACT and MEI, which quantify the real-time risk of collision.
+- This repository provides a codebase designed to evaluate real-time collision risks between two traffic participants based on their motion states and dimensions. The core logic utilizes the Separating Axis Theorem (SAT) to determine whether a collision has already occurred. For pairs of participants that have not collided, the code calculates two key metrics: ACT and MEI, which quantify the real-time risk of collision.
 
 ## Key Metrics
 
