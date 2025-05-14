@@ -1,10 +1,10 @@
-# 这版融合了（1）碰撞检测；（2）只有两车最近距离点仍在靠近时，才计算SSM数值
-# 包括的SSMs有：(1)ACT; (2)RTTC(2DTTC); (3)MEI
+# This version integrates: (1) collision detection; (2) SSM values are calculated only when the closest points between two vehicles are approaching
+# Included SSMs: (1) ACT; (2) RTTC (2DTTC); (3) MEI
 import numpy as np
 import math
 
 
-# 检查碰撞的辅助函数1
+# Collision detection helper function 1
 def get_projection_offsets(length_1, width_1, heading_1, length_2, width_2, heading_2):
     dx_1 = length_1 / 2
     dy_1 = width_1 / 2
@@ -51,10 +51,9 @@ def get_projection_offsets(length_1, width_1, heading_1, length_2, width_2, head
         max_and_min_projections_2.append([np.min(i), np.max(i)])
     return axes, max_and_min_projections_1, max_and_min_projections_2
 
-# 检查碰撞的辅助函数2
-def check_collisions_between_series(A_series, B_series, axes, max_and_min_projections_1, max_and_min_projections_2):
-    # A_series 包含车辆的中心点坐标
-    # 用numpy并行计算A_series的投影
+# Collision detection helper function 2
+def check_collisions_between_series(A_series, B_series, axes, max_and_min_projections_1, max_and_min_projections_2):    # A_series contains the central coordinates of the vehicle
+    # Calculate projections of A_series in parallel using numpy
     proj_A_min_max = []
     proj_B_min_max = []
     for i in range(4):
@@ -63,10 +62,9 @@ def check_collisions_between_series(A_series, B_series, axes, max_and_min_projec
         proj_B = np.dot(B_series[:, :2], axes[i])
         proj_B_min_max.append([proj_B + max_and_min_projections_2[i][0], proj_B + max_and_min_projections_2[i][1]])
     proj_A_min_max = np.array(proj_A_min_max)
-    proj_B_min_max = np.array(proj_B_min_max)
-    # 检查投影是否重叠
-    # 对A B中的每两辆车，在4条轴上检查是否有重叠
-    # 用numpy并行计算
+    proj_B_min_max = np.array(proj_B_min_max)    # Check if projections overlap
+    # For each pair of vehicles in A and B, check for overlaps along 4 axes
+    # Calculate in parallel using numpy
     if_collision = []
     for i in range(4):
         if_collision.append(np.logical_not(
@@ -76,7 +74,7 @@ def check_collisions_between_series(A_series, B_series, axes, max_and_min_projec
     if_collision = np.all(if_collision, axis=0)
     return if_collision
 
-# 检查碰撞的辅助函数3
+# Collision detection helper function 3
 def get_collision_A_and_B(x_A, y_A, x_B, y_B, h_A, h_B, l_A, w_A, l_B, w_B):
     x_A_array, y_A_array = np.array([x_A]), np.array([y_A])
     x_B_array, y_B_array = np.array([x_B]), np.array([y_B])
@@ -90,7 +88,7 @@ def get_collision_A_and_B(x_A, y_A, x_B, y_B, h_A, h_B, l_A, w_A, l_B, w_B):
 
 
 
-# 计算RTTC的辅助函数1
+# RTTC calculation helper function 1
 def is_ray_intersect_segment(ray_origin_x, ray_origin_y, ray_direction_x, ray_direction_y,
                              segment_start_x, segment_start_y, segment_end_x, segment_end_y):
     ray_origin = np.array([ray_origin_x, ray_origin_y])
@@ -122,11 +120,11 @@ def is_ray_intersect_segment(ray_origin_x, ray_origin_y, ray_direction_x, ray_di
         return t1
     return None
 
-# 计算RTTC的辅助函数2
+# RTTC calculation helper function 2
 def compute_RTTC(x_A, y_A, v_A, h_A, l_A, w_A, x_B, y_B, v_B, h_B, l_B, w_B):
     rotate_matrix_A = np.array([[np.cos(h_A), np.sin(h_A)], [-np.sin(h_A), np.cos(h_A)]])
     rotate_matrix_B = np.array([[np.cos(h_B), np.sin(h_B)], [-np.sin(h_B), np.cos(h_B)]])
-    #20250221修改
+    #Modified on 2025/02/21
     bbox_A = np.array([x_A, y_A]) + np.dot(
         np.array([[l_A / 2, w_A / 2], [l_A / 2, -w_A / 2], [-l_A / 2, -w_A / 2], [-l_A / 2, w_A / 2]]), rotate_matrix_A)
     bbox_B = np.array([x_B, y_B]) + np.dot(
@@ -180,45 +178,43 @@ def compute_RTTC(x_A, y_A, v_A, h_A, l_A, w_A, x_B, y_B, v_B, h_B, l_B, w_B):
 
 
 
-# 计算ACT的辅助函数1
+# ACT calculation helper function 1
 def get_rect_corners(x, y, h, l, w):
-    # 矩形四个角的坐标相对中心点
+    # Coordinates of four corners of the rectangle relative to the center point
     corners = [
         [-l / 2 * math.cos(h) - w / 2 * math.sin(h), -l / 2 * math.sin(h) + w / 2 * math.cos(h)],  # A1
         [l / 2 * math.cos(h) - w / 2 * math.sin(h), l / 2 * math.sin(h) + w / 2 * math.cos(h)],  # A2
         [l / 2 * math.cos(h) + w / 2 * math.sin(h), l / 2 * math.sin(h) - w / 2 * math.cos(h)],  # A3
         [-l / 2 * math.cos(h) + w / 2 * math.sin(h), -l / 2 * math.sin(h) - w / 2 * math.cos(h)],  # A4
     ]
-    # 计算绝对坐标
+    # Calculate absolute coordinates
     corners = [[x + corner[0], y + corner[1]] for corner in corners]
     return corners
 
-# 计算ACT的辅助函数2 计算两点之间的距离
+# ACT calculation helper function 2: Calculate distance between two points
 def distance(p1, p2):
     return math.sqrt((p1[0] - p2[0]) ** 2 + (p1[1] - p2[1]) ** 2)
 
-# 计算ACT的辅助函数3 计算点到线段的最短距离
-def point_to_segment_distance(p, v1, v2):
-    # 向量计算
+# ACT calculation helper function 3: Calculate shortest distance from point to line segment
+def point_to_segment_distance(p, v1, v2):    # Vector calculation
     line_len = distance(v1, v2)
-    if line_len == 0:  # 避免除以零
-        return distance(p, v1)
-    # 计算点到线段的投影
+    if line_len == 0:  # Avoid division by zero
+        return distance(p, v1)    # Calculate projection of point onto line segment
     t = max(0, min(1, ((p[0] - v1[0]) * (v2[0] - v1[0]) + (p[1] - v1[1]) * (v2[1] - v1[1])) / line_len ** 2))
-    # 计算最近点
+    # Calculate closest point
     closest = [v1[0] + t * (v2[0] - v1[0]), v1[1] + t * (v2[1] - v1[1])]
     return distance(p, closest), closest
 
-# 计算ACT的辅助函数4  计算矩形之间的最短距离
+# ACT calculation helper function 4: Calculate shortest distance between rectangles
 def get_shortest_distance(corners_A, corners_B):
     min_distance = float('inf')
     closest_points = None
     closest_A = None
     closest_B = None
-    # 计算每个角点到另一个矩形四条边的最短距离
+    # Calculate shortest distance from each corner to the four edges of the other rectangle
     for i in range(4):
         for j in range(4):
-            # A的角点到B的边
+            # From corner of A to edges of B
             p1 = corners_A[i]
             for k in range(4):
                 p2 = corners_B[k]
@@ -228,7 +224,7 @@ def get_shortest_distance(corners_A, corners_B):
                     min_distance = dist
                     closest_A = p1
                     closest_B = closest
-            # B的角点到A的边
+            # From corner of B to edges of A
             p1 = corners_B[i]
             for k in range(4):
                 p2 = corners_A[k]
@@ -240,13 +236,12 @@ def get_shortest_distance(corners_A, corners_B):
                     closest_B = p1
     return min_distance, closest_A, closest_B
 
-# 计算ACT的辅助函数5
+# ACT calculation helper function 5
 def compute_shortest_distance(x_A, y_A, v_A, h_A, l_A, w_A, x_B, y_B, v_B, h_B, l_B, w_B):
-    # 计算两个矩形的四个角点
+    # Calculate four corner points of two rectangles
     corners_A = get_rect_corners(x_A, y_A, h_A, l_A, w_A)
-    corners_B = get_rect_corners(x_B, y_B, h_B, l_B, w_B)
-    # 获取碰撞检测结果
-    # 计算最短距离
+    corners_B = get_rect_corners(x_B, y_B, h_B, l_B, w_B)    # Get collision detection results
+    # Calculate shortest distance
     min_distance, closest_A, closest_B = get_shortest_distance(corners_A, corners_B)
     delta_x = closest_B[0] - closest_A[0]
     delta_y = closest_B[1] - closest_A[1]
@@ -261,7 +256,7 @@ def compute_shortest_distance(x_A, y_A, v_A, h_A, l_A, w_A, x_B, y_B, v_B, h_B, 
 
 
 
-# 计算EI的辅助函数1
+# EI calculation helper function 1
 def compute_v_Br(x_A, y_A, v_A, h_A, x_B, y_B, v_B, h_B):
     delta_x = x_B - x_A
     delta_y = y_B - y_A
@@ -274,7 +269,7 @@ def compute_v_Br(x_A, y_A, v_A, h_A, x_B, y_B, v_B, h_B):
         v_Br = 0
     return v_Br
 
-# 计算EI的辅助函数2
+# EI calculation helper function 2
 def compute_InDepth(x_A, y_A, v_A, h_A, l_A, w_A, x_B, y_B, v_B, h_B, l_B, w_B):
     v_diff = np.array([v_B * np.cos(h_B) - v_A * np.cos(h_A), v_B * np.sin(h_B) - v_A * np.sin(h_A)])
     theta_B_prime = v_diff / np.linalg.norm(v_diff)
@@ -309,7 +304,7 @@ def compute_InDepth(x_A, y_A, v_A, h_A, l_A, w_A, x_B, y_B, v_B, h_B, l_B, w_B):
     return InDepth
 
 
-# 计算ACT、EI数值
+# Calculate ACT and EI values
 def compute_real_time_metrics(x_A, y_A, v_A, h_A, l_A, w_A, x_B, y_B, v_B, h_B, l_B, w_B):
 
     v_Br = compute_v_Br(x_A, y_A, v_A, h_A, x_B, y_B, v_B, h_B)
@@ -341,45 +336,46 @@ def compute_real_time_metrics(x_A, y_A, v_A, h_A, l_A, w_A, x_B, y_B, v_B, h_B, 
     return ACT, v_closest, shortest_distance, InDepth, MEI, RTTC, DTC, v_norm
 
 
-# 定义常量
-D_SAFE = 0  # EI的安全区域参数，暂时默认为0（不考虑安全冗余）
+# Define constants
+D_SAFE = 0  # Safety zone parameter for EI, temporarily set to 0 (no safety redundancy considered)
 
 
-# 主函数
-def main():
-    # 自车A参数实时参数传入（示例）
-    x_A = 0  # 绝对坐标，单位是m
+# Main function
+def main():    
+    # Ego vehicle (Vehicle A) parameters input in real-time (example)
+    x_A = 0  # Absolute coordinate, unit: m
     y_A = 0
-    v_A = 0.1  # 单位是m/s
-    h_A = 0  # 航向角，弧度制，范围是[-pi, pi]，例如1.57是90°
-    l_A = 10  # 车长
-    w_A = 2.5  # 车宽
-
-    # 周车B参数实时参数传入（示例）
+    v_A = 0.1  # Unit: m/s
+    h_A = 0  # Heading angle, in radians, range [-pi, pi], e.g., 1.57 is 90°
+    l_A = 10  # Vehicle length
+    w_A = 2.5  # Vehicle width    
+    # Surrounding vehicle (Vehicle B) parameters input in real-time (example)
     x_B = -2
     y_B = 8
     v_B = 5
     h_B = -1
     l_B = 4.8
-    w_B = 1.8
+    w_B = 1.8    
+    
+    # Included SSMs: (1)ACT; (2)RTTC(2DTTC); (3)MEI
+    # Calculate SSM values
+    ACT, v_closest, Shortest_D, InDepth, MEI, RTTC, DTC, v_norm = compute_real_time_metrics(x_A, y_A, v_A, h_A, l_A, w_A, x_B, y_B, v_B, h_B, l_B, w_B)    # Output results
+    
+    # (1) ACT: Lower values indicate higher danger, especially as it approaches 0. Range is [0,+∞]. 
+    #     For dangerous scenarios, consider filtering events where ACT is less than 3s.
+    print(f"ACT: {ACT:.4f} s")    
+    print(f"v_closest: {v_closest:.4f} m/s")  # Intermediate value for ACT calculation
+    print(f"Shortest_D: {Shortest_D:.4f} m")  # Intermediate value for ACT calculation
 
-    # 包括的SSMs有：(1)ACT; (2)RTTC(2DTTC); (3)MEI
-    # 计算SSMs数值
-    ACT, v_closest, Shortest_D, InDepth, MEI, RTTC, DTC, v_norm = compute_real_time_metrics(x_A, y_A, v_A, h_A, l_A, w_A, x_B, y_B, v_B, h_B, l_B, w_B)
-
-    # 输出结果
-    # (1) ACT,【越小】越危险，越接近0越危险，取值范围是[0,+∞]，取危险场景可以筛选ACT小于3s的所有事件。
-    print(f"ACT: {ACT:.4f} s")
-    print(f"v_closest: {v_closest:.4f} m/s")  # ACT计算过程量
-    print(f"Shortest_D: {Shortest_D:.4f} m")  # ACT计算过程量
-
-    # (2) RTTC(2DTTC),【越小】越危险，越接近0越危险，取值范围是[0,+∞]，取危险场景可以筛选RTTC小于3s的所有事件。
+    # (2) RTTC(2DTTC): Lower values indicate higher danger, especially as it approaches 0. Range is [0,+∞].
+    #     For dangerous scenarios, consider filtering events where RTTC is less than 3s.
     print(f"RTTC: {RTTC:.4f} s")
-    print(f"DTC: {DTC:.4f} m")  # RTTC计算过程量
-    print(f"v_norm: {v_norm:.4f} m/s")  # RTTC计算过程量
+    print(f"DTC: {DTC:.4f} m")  # Intermediate value for RTTC calculation
+    print(f"v_norm: {v_norm:.4f} m/s")  # Intermediate value for RTTC calculation
 
-    # (3) MEI，【越大】越危险，取值范围是[0,+∞]，取危险场景可以筛选EI大于3 [m/s]的所有事件。
-    print(f"InDepth: {InDepth:.4f} m")  # EI、MEI计算过程量
+    # (3) MEI: Higher values indicate higher danger. Range is [0,+∞].
+    #     For dangerous scenarios, consider filtering events where MEI is greater than 3 [m/s].
+    print(f"InDepth: {InDepth:.4f} m")  # Intermediate value for EI and MEI calculation
     print(f"MEI: {MEI:.4f} m/s")
 
 

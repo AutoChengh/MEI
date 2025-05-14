@@ -7,13 +7,13 @@
 
 ## Key Metrics
 
-- **MEI (Minimum Evasive Impulse)**:  
+- **MEI (Modified-Emergency Index)**:  
     - Unit: [m/s]  
     - MEI > 0 indicates that a collision is inevitable if the current motion states remain unchanged.  
     - A higher MEI value signifies a higher collision risk.  
     - The goal is to reduce MEI to a value less than 0 to resolve the conflict.
 
-- **ACT (Augmented Collision Time)**:  
+- **[ACT (Anticipated Collision Time)](https://doi.org/10.1016/j.trc.2022.103655)**:  
     - Unit: [s]  
     - ACT is a 2D extension of the Time-to-Collision (TTC) metric.  
     - ACT > 0, with values closer to 0, indicates higher collision risk.  
